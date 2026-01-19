@@ -6,6 +6,7 @@ import sys
 # --- Configuration ---
 URL = "https://police.ac.kr/police/police/master/76/boardList.do?mdex=police124"
 MEMORY_FILE = "latest_post_id.txt"
+KEYWORD = "청람"  # <--- CHANGE THIS to your desired keyword (e.g., "Announcement", "Result")
 
 def send_discord_alert(post_id, title, link):
     """Sends a notification to Discord via Webhook."""
@@ -16,11 +17,11 @@ def send_discord_alert(post_id, title, link):
         return
 
     payload = {
-        "content": "🚨 **New KNPU Notice Posted!**",
+        "content": f"🚨 **Keyword Match Found!** ('{KEYWORD}')",
         "embeds": [{
             "title": title,
             "url": link,
-            "color": 3447003,  # Blue color
+            "color": 5763719,  # Green color
             "fields": [
                 {"name": "Post ID", "value": str(post_id), "inline": True}
             ],
@@ -71,11 +72,11 @@ def main():
         return
 
     current_id, current_title, current_link = latest_data
-    print(f"Latest Online ID: {current_id}")
+    print(f"Latest Online: [{current_id}] {current_title}")
 
     # 2. Check Local Memory
     if not os.path.exists(MEMORY_FILE):
-        # FIRST RUN: Create file but don't alert
+        # First run: Just save the ID to memory, don't spam alerts
         print("First run detected. Initializing memory.")
         with open(MEMORY_FILE, "w") as f:
             f.write(str(current_id))
@@ -87,14 +88,18 @@ def main():
         except ValueError:
             last_seen_id = 0
 
-    # 3. Compare and Alert
+    # 3. Logic: Is it new? -> Does it have keyword?
     if current_id > last_seen_id:
         print(f"New post detected! ({last_seen_id} -> {current_id})")
         
-        # Send Alert
-        send_discord_alert(current_id, current_title, current_link)
+        # KEYWORD CHECK
+        if KEYWORD in current_title:
+            print(f"✅ Keyword '{KEYWORD}' found in title. Sending alert...")
+            send_discord_alert(current_id, current_title, current_link)
+        else:
+            print(f"❌ Keyword '{KEYWORD}' NOT found. Skipping alert.")
         
-        # Update Memory
+        # Update Memory (We update it even if no keyword, so we don't check this post again)
         with open(MEMORY_FILE, "w") as f:
             f.write(str(current_id))
     else:
