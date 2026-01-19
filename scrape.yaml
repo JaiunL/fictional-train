@@ -1,0 +1,39 @@
+name: Check for New Posts
+
+on:
+  workflow_dispatch:      # Allows manual testing
+  schedule:
+    - cron: '*/30 * * * *'  # CHANGED: Runs every 30 minute
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write     # Required to commit the text file update
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Scraper
+        env:
+          # This pulls the secret from GitHub settings into the script
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python scraper.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "Automated Scraper"
+          git config user.email "actions@users.noreply.github.com"
+          git add latest_post_id.txt
+          # The commit will fail if there are no changes (which is good)
+          git commit -m "Update latest post ID" || exit 0
+          git push
