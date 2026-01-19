@@ -3,7 +3,7 @@ name: Check for New Posts
 on:
   workflow_dispatch:      # Allows manual testing
   schedule:
-    - cron: '*/10 * * * *'  # CHANGED: Runs every 30 minute
+    - cron: '*/5 * * * *'  # CHANGED: Runs every 30 minute
 
 jobs:
   scrape:
@@ -37,4 +37,5 @@ jobs:
           # The commit will fail if there are no changes (which is good)
           git commit -m "Update latest post ID" || exit 0
           git push
+
 
